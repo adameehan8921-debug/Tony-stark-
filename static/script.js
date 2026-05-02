@@ -1,27 +1,26 @@
+// 🎤 VOICE SETUP
 const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
 recognition.lang = "en-US";
 
-// 🌍 Country coordinates (basic demo)
+// 🌍 COUNTRY COORDS (MATCH backend: us, in, gb)
 const countryCoords = {
-  "usa": [37, -95],
-  "india": [20.5, 78.9],
-  "uk": [55, -3],
-  "china": [35, 103],
-  "russia": [60, 90]
+  "us": [37, -95],
+  "in": [20.5, 78.9],
+  "gb": [55, -3]
 };
 
-// 🎤 Start voice
+// 🎤 START
 function startListening() {
   recognition.start();
 }
 
-// 🧠 Voice result
+// 🧠 VOICE RESULT
 recognition.onresult = async function(event) {
   let text = event.results[0][0].transcript;
   document.getElementById("user").innerText = text;
 
   if (text.toLowerCase().includes("news")) {
-    speak("Yes sir, I am checking global updates");
+    await speak("Yes sir, scanning global updates");
     loadNews();
     return;
   }
@@ -38,7 +37,7 @@ recognition.onresult = async function(event) {
   speak(data.reply);
 };
 
-// 🔊 Speak function (promise for sync)
+// 🔊 SPEAK (SYNC)
 function speak(text) {
   return new Promise(resolve => {
     let s = new SpeechSynthesisUtterance("Yes sir, " + text);
@@ -49,82 +48,142 @@ function speak(text) {
   });
 }
 
-// 📰 Load news + animate
-async function loadNews() {
-  let res = await fetch("/news");
-  let data = await res.json();
-
-  let newsDiv = document.getElementById("news");
-  newsDiv.innerHTML = "";
-
-  for (let i = 0; i < data.length; i++) {
-    let n = data[i];
-
-    // 🖼️ Show image
-    newsDiv.innerHTML = `
-      <div style="box-shadow:0 0 15px #00f0ff;">
-        <img src="${n.image}">
-        <p>${n.title}</p>
-      </div>
-    `;
-
-    // 🎥 Play video
-    playVideo(n.title);
-
-    // 🌍 Detect country (simple keyword match)
-    let country = detectCountry(n.title);
-    if (country && countryCoords[country]) {
-      let [lat, lon] = countryCoords[country];
-      showLocation(lat, lon);
-    }
-
-    // 🔊 Speak news (wait until finished)
-    await speak("Latest update. " + n.title);
-
-    // ⏳ Small delay between news
-    await delay(1500);
-  }
-
-  speak("That's all for now.");
-}
-
-// 🌍 Detect country from title
-function detectCountry(text) {
-  text = text.toLowerCase();
-
-  if (text.includes("india")) return "india";
-  if (text.includes("america") || text.includes("us")) return "usa";
-  if (text.includes("uk") || text.includes("britain")) return "uk";
-  if (text.includes("china")) return "china";
-  if (text.includes("russia")) return "russia";
-
-  return null;
-}
-
-// ⏳ Delay helper
+// ⏳ DELAY
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// 🎥 Play video
-function playVideo(query) {
-  document.getElementById("video").src =
-    "https://www.youtube.com/embed?autoplay=1&mute=1&listType=search&list=" + query;
+//////////////////////////////////////////////////////////
+// 🌍 THREE.JS GLOBE
+//////////////////////////////////////////////////////////
+
+let scene = new THREE.Scene();
+let camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+
+let renderer = new THREE.WebGLRenderer({
+  canvas: document.getElementById("globe"),
+  alpha: true
+});
+
+renderer.setSize(300, 300);
+
+let geometry = new THREE.SphereGeometry(5, 32, 32);
+let texture = new THREE.TextureLoader().load(
+  "https://threejs.org/examples/textures/earth_atmos_2048.jpg"
+);
+
+let material = new THREE.MeshBasicMaterial({ map: texture });
+let globe = new THREE.Mesh(geometry, material);
+
+scene.add(globe);
+camera.position.z = 10;
+
+let rotating = true;
+
+// 🔄 ROTATION
+function animate() {
+  requestAnimationFrame(animate);
+
+  if (rotating) {
+    globe.rotation.y += 0.004;
+  }
+
+  renderer.render(scene, camera);
+}
+animate();
+
+// 🎯 FOCUS + ZOOM
+function focusGlobe(lat, lon) {
+  rotating = false;
+
+  globe.rotation.y = lon * Math.PI / 180;
+  globe.rotation.x = lat * Math.PI / 180;
+
+  let zoom = 10;
+  let interval = setInterval(() => {
+    if (zoom > 6) {
+      zoom -= 0.1;
+      camera.position.z = zoom;
+    } else {
+      clearInterval(interval);
+    }
+  }, 30);
 }
 
-// 🌍 Map
+//////////////////////////////////////////////////////////
+// 🗺️ MAP
+//////////////////////////////////////////////////////////
+
 var map = L.map('map').setView([20, 0], 2);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 let marker;
 
-// 📍 Show location
 function showLocation(lat, lon) {
-  if (marker) {
-    map.removeLayer(marker);
-  }
+  if (marker) map.removeLayer(marker);
 
   marker = L.marker([lat, lon]).addTo(map);
   map.setView([lat, lon], 4);
+
+  // fade-in effect
+  document.getElementById("map").style.opacity = 1;
+}
+
+//////////////////////////////////////////////////////////
+// 🎥 VIDEO FIX (YouTube unavailable FIX 🔥)
+//////////////////////////////////////////////////////////
+
+function playVideo(query) {
+  // safer embed (no playlist bug)
+  let clean = encodeURIComponent(query + " news");
+  document.getElementById("video").src =
+    `https://www.youtube.com/embed?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1&listType=search&list=${clean}`;
+}
+
+//////////////////////////////////////////////////////////
+// 📰 NEWS SYSTEM (CINEMATIC)
+//////////////////////////////////////////////////////////
+
+async function loadNews() {
+  let res = await fetch("/news");
+  let data = await res.json();
+
+  let newsDiv = document.getElementById("news");
+
+  for (let i = 0; i < data.length; i++) {
+    let n = data[i];
+
+    // 🖼️ SHOW IMAGE
+    newsDiv.innerHTML = `
+      <div style="box-shadow:0 0 20px #00f0ff;">
+        <img src="${n.image}">
+        <p>${n.title}</p>
+      </div>
+    `;
+
+    let country = n.country;
+
+    if (countryCoords[country]) {
+      let [lat, lon] = countryCoords[country];
+
+      // 🌍 Globe animation
+      focusGlobe(lat, lon);
+
+      await delay(1500);
+
+      // 🗺️ Map show
+      showLocation(lat, lon);
+    }
+
+    // 🎥 Video
+    playVideo(n.title);
+
+    // 🔊 Speak
+    await speak("Latest update. " + n.title);
+
+    await delay(1200);
+  }
+
+  speak("All updates completed, sir.");
 }
