@@ -2,60 +2,51 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Aira AI</title>
 
-  <!-- CSS -->
   <link rel="stylesheet" href="/static/style.css">
 
-  <!-- Leaflet (Map) -->
+  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
-  <!-- Three.js (3D Globe) -->
+  <!-- Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 
 <body>
 
-<!-- 🔷 TOP BAR -->
 <div class="top-bar">
   <h1>🧠 AIRA</h1>
-  <button class="mic-btn" onclick="startListening()">🎤 Speak</button>
+  <button class="mic-btn" onclick="startListening()">🎤</button>
 </div>
 
-<!-- 🧠 MAIN CONTAINER -->
 <div class="container">
 
-  <!-- LEFT SIDE (Chat + News) -->
+  <!-- LEFT -->
   <div class="left-panel">
 
-    <!-- Chat -->
     <div class="chat-box">
       <p><b>You:</b> <span id="user"></span></p>
       <p><b>Aira:</b> <span id="bot"></span></p>
     </div>
 
-    <!-- News -->
     <div id="news" class="news-box"></div>
 
-    <!-- Video -->
     <iframe id="video" class="video-box"></iframe>
 
   </div>
 
-  <!-- RIGHT SIDE (Map + Globe) -->
+  <!-- RIGHT -->
   <div class="right-panel">
 
-    <!-- 🌍 3D Globe -->
     <canvas id="globe"></canvas>
-
-    <!-- 🗺️ Map -->
     <div id="map"></div>
 
   </div>
 
 </div>
 
-<!-- Scripts -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="/static/script.js"></script>
 
