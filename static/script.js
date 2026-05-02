@@ -1,20 +1,14 @@
+//////////////////////////////////////////////////////////
 // 🎤 VOICE SETUP
+//////////////////////////////////////////////////////////
+
 const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
 recognition.lang = "en-US";
 
-// 🌍 COUNTRY COORDS (MATCH backend: us, in, gb)
-const countryCoords = {
-  "us": [37, -95],
-  "in": [20.5, 78.9],
-  "gb": [55, -3]
-};
-
-// 🎤 START
 function startListening() {
   recognition.start();
 }
 
-// 🧠 VOICE RESULT
 recognition.onresult = async function(event) {
   let text = event.results[0][0].transcript;
   document.getElementById("user").innerText = text;
@@ -37,21 +31,33 @@ recognition.onresult = async function(event) {
   speak(data.reply);
 };
 
-// 🔊 SPEAK (SYNC)
+//////////////////////////////////////////////////////////
+// 🔊 SPEAK
+//////////////////////////////////////////////////////////
+
 function speak(text) {
   return new Promise(resolve => {
     let s = new SpeechSynthesisUtterance("Yes sir, " + text);
-    s.rate = 0.95;
+    s.rate = 0.9;
     s.pitch = 1;
     s.onend = resolve;
     speechSynthesis.speak(s);
   });
 }
 
-// ⏳ DELAY
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+//////////////////////////////////////////////////////////
+// 🌍 COUNTRY COORDS
+//////////////////////////////////////////////////////////
+
+const countryCoords = {
+  "us": [37, -95],
+  "in": [20.5, 78.9],
+  "gb": [55, -3]
+};
 
 //////////////////////////////////////////////////////////
 // 🌍 THREE.JS GLOBE
@@ -80,34 +86,47 @@ camera.position.z = 10;
 
 let rotating = true;
 
-// 🔄 ROTATION
 function animate() {
   requestAnimationFrame(animate);
 
   if (rotating) {
-    globe.rotation.y += 0.004;
+    globe.rotation.y += 0.003;
   }
 
   renderer.render(scene, camera);
 }
 animate();
 
-// 🎯 FOCUS + ZOOM
-function focusGlobe(lat, lon) {
+//////////////////////////////////////////////////////////
+// 🌍 GLOBE ANIMATION
+//////////////////////////////////////////////////////////
+
+async function focusGlobe(lat, lon) {
   rotating = false;
 
-  globe.rotation.y = lon * Math.PI / 180;
-  globe.rotation.x = lat * Math.PI / 180;
+  let targetY = THREE.MathUtils.degToRad(lon);
+  let targetX = THREE.MathUtils.degToRad(-lat);
 
-  let zoom = 10;
-  let interval = setInterval(() => {
-    if (zoom > 6) {
-      zoom -= 0.1;
-      camera.position.z = zoom;
-    } else {
-      clearInterval(interval);
-    }
-  }, 30);
+  for (let i = 0; i < 30; i++) {
+    globe.rotation.y += (targetY - globe.rotation.y) * 0.1;
+    globe.rotation.x += (targetX - globe.rotation.x) * 0.1;
+    await delay(30);
+  }
+
+  // 🔍 Zoom inside
+  for (let i = 0; i < 20; i++) {
+    camera.position.z -= 0.15;
+    await delay(25);
+  }
+}
+
+async function resetGlobe() {
+  for (let i = 0; i < 20; i++) {
+    camera.position.z += 0.15;
+    await delay(20);
+  }
+
+  rotating = true;
 }
 
 //////////////////////////////////////////////////////////
@@ -126,35 +145,39 @@ function showLocation(lat, lon) {
   marker = L.marker([lat, lon]).addTo(map);
   map.setView([lat, lon], 4);
 
-  // fade-in effect
   document.getElementById("map").style.opacity = 1;
 }
 
 //////////////////////////////////////////////////////////
-// 🎥 VIDEO FIX (YouTube unavailable FIX 🔥)
+// 🎥 VIDEO
 //////////////////////////////////////////////////////////
 
 function playVideo(query) {
-  // safer embed (no playlist bug)
   let clean = encodeURIComponent(query + " news");
   document.getElementById("video").src =
     `https://www.youtube.com/embed?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1&listType=search&list=${clean}`;
 }
 
 //////////////////////////////////////////////////////////
-// 📰 NEWS SYSTEM (CINEMATIC)
+// 📰 NEWS SYSTEM
 //////////////////////////////////////////////////////////
 
 async function loadNews() {
   let res = await fetch("/news");
   let data = await res.json();
 
+  data = data.slice(0, 10); // ✅ limit
+
   let newsDiv = document.getElementById("news");
+  let seen = new Set();
 
   for (let i = 0; i < data.length; i++) {
     let n = data[i];
 
-    // 🖼️ SHOW IMAGE
+    if (seen.has(n.title)) continue;
+    seen.add(n.title);
+
+    // 🖼️ Show news
     newsDiv.innerHTML = `
       <div style="box-shadow:0 0 20px #00f0ff;">
         <img src="${n.image}">
@@ -167,22 +190,17 @@ async function loadNews() {
     if (countryCoords[country]) {
       let [lat, lon] = countryCoords[country];
 
-      // 🌍 Globe animation
-      focusGlobe(lat, lon);
-
-      await delay(1500);
-
-      // 🗺️ Map show
+      await focusGlobe(lat, lon);
       showLocation(lat, lon);
     }
 
-    // 🎥 Video
     playVideo(n.title);
 
-    // 🔊 Speak
     await speak("Latest update. " + n.title);
 
     await delay(1200);
+
+    await resetGlobe();
   }
 
   speak("All updates completed, sir.");
