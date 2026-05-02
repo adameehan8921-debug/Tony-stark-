@@ -1,0 +1,28 @@
+body {
+  background: black;
+  color: #00f0ff;
+  font-family: monospace;
+  text-align: center;
+}
+
+button {
+  background: #00f0ff;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+}
+
+#map {
+  height: 250px;
+  margin: 10px;
+}
+
+#video {
+  width: 90%;
+  height: 250px;
+}
+
+#news img {
+  width: 200px;
+  margin: 5px;
+}
