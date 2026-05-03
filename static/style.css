@@ -4,7 +4,6 @@ body {
   background: radial-gradient(circle, #000000, #020d12);
   color: #00f0ff;
   font-family: "Orbitron", monospace;
-  overflow: hidden;
 }
 
 /* 🔷 TOP BAR */
@@ -38,7 +37,7 @@ body {
   box-shadow: 0 0 15px #00f0ff;
 }
 
-/* 🧠 MAIN LAYOUT */
+/* 🧠 MAIN */
 .container {
   display: flex;
   height: calc(100vh - 70px);
@@ -59,7 +58,7 @@ body {
   border-left: 1px solid #00f0ff33;
 }
 
-/* 💬 CHAT BOX */
+/* 💬 CHAT */
 .chat-box {
   padding: 10px;
   border: 1px solid #00f0ff33;
@@ -74,19 +73,19 @@ body {
   gap: 10px;
 }
 
-.news-box div {
+.news-card {
   border: 1px solid #00f0ff33;
   padding: 5px;
   width: 180px;
   transition: 0.3s;
 }
 
-.news-box div:hover {
+.news-card:hover {
   box-shadow: 0 0 15px #00f0ff;
   transform: scale(1.05);
 }
 
-.news-box img {
+.news-card img {
   width: 100%;
   border-radius: 5px;
 }
@@ -99,11 +98,18 @@ body {
   border: 1px solid #00f0ff33;
 }
 
+/* 🌍 GLOBE WRAPPER (IMPORTANT FIX 🔥) */
+.globe-wrapper {
+  height: 50%;
+  width: 100%;
+  position: relative;
+}
+
 /* 🌍 GLOBE */
 #globe {
   width: 100%;
-  height: 50%;
-  background: transparent;
+  height: 100%;
+  display: block;
 }
 
 /* 🗺️ MAP */
@@ -128,12 +134,22 @@ b {
   background: #00f0ff;
 }
 
-/* 📱 MOBILE FIX */
-@media (max-width: 768px) {
+/* 🌐 HACKER GLOW EFFECT */
+body::after {
+  content: "";
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    rgba(0, 255, 255, 0.03) 50%,
+    transparent 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+}
 
-  body {
-    overflow: auto;
-  }
+/* 📱 MOBILE */
+@media (max-width: 768px) {
 
   .container {
     flex-direction: column;
@@ -144,11 +160,7 @@ b {
     width: 100%;
   }
 
-  .right-panel {
-    height: auto;
-  }
-
-  #globe {
+  .globe-wrapper {
     height: 200px;
   }
 
@@ -164,7 +176,7 @@ b {
     justify-content: center;
   }
 
-  .news-box div {
+  .news-card {
     width: 90%;
   }
 }
