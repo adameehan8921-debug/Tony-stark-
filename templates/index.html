@@ -2,51 +2,74 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+
+  <!-- 📱 MOBILE FIX -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Aira AI</title>
 
+  <!-- 🎨 CSS -->
   <link rel="stylesheet" href="/static/style.css">
 
-  <!-- Leaflet -->
+  <!-- 🌍 Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
-  <!-- Three.js -->
+  <!-- 🌍 Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- 🔥 FONT (Jarvis feel) -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
 </head>
 
 <body>
 
+<!-- 🔷 TOP BAR -->
 <div class="top-bar">
   <h1>🧠 AIRA</h1>
   <button class="mic-btn" onclick="startListening()">🎤</button>
 </div>
 
+<!-- 🧠 MAIN -->
 <div class="container">
 
-  <!-- LEFT -->
+  <!-- LEFT PANEL -->
   <div class="left-panel">
 
+    <!-- 💬 CHAT -->
     <div class="chat-box">
       <p><b>You:</b> <span id="user"></span></p>
       <p><b>Aira:</b> <span id="bot"></span></p>
     </div>
 
+    <!-- 📰 NEWS -->
     <div id="news" class="news-box"></div>
 
-    <iframe id="video" class="video-box"></iframe>
+    <!-- 🎥 VIDEO -->
+    <iframe 
+      id="video" 
+      class="video-box"
+      allow="autoplay; encrypted-media"
+      allowfullscreen>
+    </iframe>
 
   </div>
 
-  <!-- RIGHT -->
+  <!-- RIGHT PANEL -->
   <div class="right-panel">
 
-    <canvas id="globe"></canvas>
+    <!-- 🌍 GLOBE -->
+    <div class="globe-wrapper">
+      <canvas id="globe"></canvas>
+    </div>
+
+    <!-- 🗺️ MAP -->
     <div id="map"></div>
 
   </div>
 
 </div>
 
+<!-- 🔻 SCRIPTS -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="/static/script.js"></script>
 
