@@ -31,9 +31,6 @@ recognition.onresult = async function(event) {
     } catch (e) { console.log("Comms error", e); }
 };
 
-//////////////////////////////////////////////////////////
-// 🔊 SPEAK & DELAY
-//////////////////////////////////////////////////////////
 function speak(text) {
     return new Promise(resolve => {
         speechSynthesis.cancel();
@@ -48,19 +45,21 @@ function speak(text) {
 function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
 //////////////////////////////////////////////////////////
-// 🌍 GEO (OpenStreetMap)
+// 🌍 GEO LOGIC (Coordinates Fix)
 //////////////////////////////////////////////////////////
 async function getCoords(place) {
     try {
         let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(place)}`);
         let data = await res.json();
-        if (data.length > 0) return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+        if (data && data.length > 0) {
+            return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+        }
     } catch (e) { console.log("Geo error", e); }
-    return [20, 77]; // Default to India if not found
+    return [20.5937, 78.9629]; // Default: India
 }
 
 //////////////////////////////////////////////////////////
-// 🌍 THREE.JS GLOBE (FIXED ROTATION)
+// 🌍 THREE.JS GLOBE (PRECISION ROTATION)
 //////////////////////////////////////////////////////////
 let canvas = document.getElementById("globe");
 let scene = new THREE.Scene();
@@ -79,15 +78,18 @@ scene.add(globe);
 camera.position.z = 12;
 
 let rotating = true;
+let curRotY = 0;
 let targetX = 0, targetY = 0;
 
 function animate() {
     requestAnimationFrame(animate);
     if (rotating) {
         globe.rotation.y += 0.003; 
+        curRotY = globe.rotation.y;
     } else {
-        globe.rotation.y += (targetY - globe.rotation.y) * 0.1;
-        globe.rotation.x += (targetX - globe.rotation.x) * 0.1;
+        // Smooth rotation to target location
+        globe.rotation.y += (targetY - globe.rotation.y) * 0.05;
+        globe.rotation.x += (targetX - globe.rotation.x) * 0.05;
     }
     renderer.render(scene, camera);
 }
@@ -95,9 +97,12 @@ animate();
 
 async function focusGlobe(lat, lon) {
     rotating = false;
-    targetY = (lon + 180) * (Math.PI / 180);
-    targetX = (lat) * (Math.PI / 180);
-    while(camera.position.z > 8) { camera.position.z -= 0.1; await delay(20); }
+    // Precision Mapping for 3D Sphere
+    targetY = (lon * (Math.PI / 180)) + Math.PI / 2;
+    targetX = -(lat * (Math.PI / 180));
+    
+    // Smooth Zoom In
+    while(camera.position.z > 8.5) { camera.position.z -= 0.1; await delay(20); }
 }
 
 async function resetGlobe() {
@@ -106,29 +111,28 @@ async function resetGlobe() {
 }
 
 //////////////////////////////////////////////////////////
-// 🗺️ RADAR MAP SETUP
+// 🗺️ MAP SETUP (Bottom Position)
 //////////////////////////////////////////////////////////
 var map = L.map('map', {zoomControl: false}).setView([20, 0], 2);
-L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
     subdomains:['mt0','mt1','mt2','mt3']
 }).addTo(map);
 
 function showLocation(lat, lon) {
-    map.flyTo([lat, lon], 10, { animate: true, duration: 1.5 });
+    map.flyTo([lat, lon], 7, { animate: true, duration: 2 });
 }
 
 //////////////////////////////////////////////////////////
-// 📰 NEWS SYSTEM (THE REAL JARVIS FEEL)
+// 📰 NEWS SYSTEM (Real Sync)
 //////////////////////////////////////////////////////////
 async function loadNews() {
     try {
         let res = await fetch("/news");
         let data = await res.json();
         let newsDiv = document.getElementById("news");
-        
-        newsDiv.innerHTML = ""; // Clear old
+        newsDiv.innerHTML = ""; 
 
-        // 1. Inject cards for scrolling
+        // Load all cards first
         data.forEach(n => {
             newsDiv.innerHTML += `
               <div class="news-card">
@@ -140,21 +144,23 @@ async function loadNews() {
               </div>`;
         });
 
-        // 2. Sequential Analysis
         for (let n of data.slice(0, 5)) {
-            let coords = await getCoords(n.country);
+            let coords = await getCoords(n.country || "USA");
+            
+            // 1. Focus Globe
             await focusGlobe(coords[0], coords[1]);
+            // 2. Focus Map
             showLocation(coords[0], coords[1]);
 
-            // Play video if available
+            // Video Feed Sync
             let vRes = await fetch(`/youtube?q=${encodeURIComponent(n.title)}`);
             let vData = await vRes.json();
             if(vData.videoId) document.getElementById("video").src = `https://www.youtube.com/embed/${vData.videoId}?autoplay=1&mute=1`;
 
             await speak(n.title);
-            await delay(5000);
+            await delay(6000); // Give time to read/listen
             await resetGlobe();
         }
-        speak("All systems updated, Sir.");
+        speak("Global intelligence check complete, Sir.");
     } catch (e) { console.log("News Error", e); }
 }
