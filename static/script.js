@@ -108,7 +108,17 @@ let renderer = new THREE.WebGLRenderer({
   antialias: true
 });
 
-renderer.setSize(globeCanvas.clientWidth, globeCanvas.clientHeight);
+function resizeGlobe() {
+  let w = globeCanvas.offsetWidth || 300;
+  let h = globeCanvas.offsetHeight || 300;
+
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+
+resizeGlobe();
+window.addEventListener("resize", resizeGlobe);
 
 let geometry = new THREE.SphereGeometry(5, 32, 32);
 let texture = new THREE.TextureLoader().load(
@@ -134,21 +144,20 @@ function animate() {
 }
 animate();
 
-window.addEventListener("resize", () => {
-  let w = globeCanvas.clientWidth;
-  let h = globeCanvas.clientHeight;
-
-  renderer.setSize(w, h);
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-});
-
 //////////////////////////////////////////////////////////
 // 🌍 GLOBE ANIMATION
 //////////////////////////////////////////////////////////
 
-async function focusGlobe(lat, lon) {
+async function stopRotationSmooth() {
+  for (let i = 0; i < 20; i++) {
+    globe.rotation.y += 0.003 * (1 - i / 20);
+    await delay(20);
+  }
   rotating = false;
+}
+
+async function focusGlobe(lat, lon) {
+  await stopRotationSmooth();
 
   let targetY = THREE.MathUtils.degToRad(lon);
   let targetX = THREE.MathUtils.degToRad(-lat);
@@ -194,21 +203,33 @@ function showLocation(lat, lon) {
 }
 
 //////////////////////////////////////////////////////////
-// 🎥 VIDEO FIX
+// 🎥 VIDEO (YouTube API)
 //////////////////////////////////////////////////////////
 
-function playVideo(query) {
-  let clean = encodeURIComponent(query + " news");
+async function playVideo(query) {
   let iframe = document.getElementById("video");
 
-  iframe.src =
-    `https://www.youtube.com/embed?listType=search&list=${clean}&autoplay=1&mute=1`;
+  try {
+    let res = await fetch(`/youtube?q=${encodeURIComponent(query)}`);
+    let data = await res.json();
 
-  setTimeout(() => {
-    if (!iframe.src) {
-      window.open("https://www.youtube.com/results?search_query=" + clean);
+    if (data.videoId) {
+      iframe.src = `https://www.youtube.com/embed/${data.videoId}?autoplay=1&mute=1`;
+    } else {
+      fallbackVideo(query);
     }
-  }, 4000);
+
+  } catch (e) {
+    fallbackVideo(query);
+  }
+}
+
+function fallbackVideo(query) {
+  window.open(
+    "https://www.youtube.com/results?search_query=" +
+    encodeURIComponent(query + " news"),
+    "_blank"
+  );
 }
 
 //////////////////////////////////////////////////////////
@@ -219,7 +240,7 @@ async function loadNews() {
   let res = await fetch("/news");
   let data = await res.json();
 
-  data = data.slice(0, 10);
+  data = data.slice(0, 50);
 
   let newsDiv = document.getElementById("news");
   let seen = new Set();
@@ -229,9 +250,9 @@ async function loadNews() {
     if (!n.title || seen.has(n.title)) continue;
     seen.add(n.title);
 
-    // 🖼️ UI
-    newsDiv.innerHTML = `
-      <div style="box-shadow:0 0 20px #00f0ff;">
+    // 📰 STACK UI
+    newsDiv.innerHTML += `
+      <div class="news-card">
         <img src="${n.image}">
         <p>${n.title}</p>
       </div>
@@ -246,11 +267,11 @@ async function loadNews() {
       await focusGlobe(lat, lon);
       showLocation(lat, lon);
 
-      await delay(800); // API safe
+      await delay(800);
     }
 
     // 🎥 VIDEO
-    playVideo(n.title);
+    await playVideo(n.title);
 
     // 🔊 VOICE
     await speak("Latest update. " + n.title);
@@ -260,5 +281,5 @@ async function loadNews() {
     await resetGlobe();
   }
 
-  speak("All updates completed, sir.");
+  speak("All updates are completed, sir.");
 }
