@@ -1,269 +1,214 @@
 //////////////////////////////////////////////////////////
 // 🎤 VOICE SETUP
 //////////////////////////////////////////////////////////
-
 const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
 recognition.lang = "en-US";
+recognition.continuous = false;
 
 recognition.onerror = () => console.log("Voice error");
 
 function startListening() {
-  recognition.start();
+    recognition.start();
 }
 
 recognition.onresult = async function(event) {
-  let text = event.results[0][0].transcript;
-  document.getElementById("user").innerText = text;
+    let text = event.results[0][0].transcript;
+    document.getElementById("user").innerText = text;
 
-  if (text.toLowerCase().includes("news")) {
-    await speak("Scanning global updates");
-    loadNews();
-    return;
-  }
+    if (text.toLowerCase().includes("news")) {
+        await speak("Scanning global updates, sir.");
+        loadNews();
+        return;
+    }
 
-  let res = await fetch("/chat", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({message: text})
-  });
-
-  let data = await res.json();
-  document.getElementById("bot").innerText = data.reply;
-
-  await speak(data.reply);
+    try {
+        let res = await fetch("/chat", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({message: text})
+        });
+        let data = await res.json();
+        document.getElementById("bot").innerText = data.reply;
+        await speak(data.reply);
+    } catch (e) {
+        console.log("Chat fetch error", e);
+    }
 };
 
 //////////////////////////////////////////////////////////
-// 🔊 SPEAK
+// 🔊 SPEAK & DELAY
 //////////////////////////////////////////////////////////
-
 function speak(text) {
-  return new Promise(resolve => {
-    speechSynthesis.cancel();
-
-    let s = new SpeechSynthesisUtterance("Yes sir, " + text);
-    s.rate = 0.9;
-    s.pitch = 1;
-
-    s.onend = resolve;
-    speechSynthesis.speak(s);
-  });
+    return new Promise(resolve => {
+        speechSynthesis.cancel();
+        let s = new SpeechSynthesisUtterance("Yes sir, " + text);
+        s.rate = 1.0;
+        s.pitch = 1;
+        s.onend = resolve;
+        speechSynthesis.speak(s);
+    });
 }
 
 function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 //////////////////////////////////////////////////////////
 // 🌍 GEO (OpenStreetMap)
 //////////////////////////////////////////////////////////
-
 const geoCache = {};
 
 async function getCoords(place) {
-  if (geoCache[place]) return geoCache[place];
-
-  try {
-    let res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(place)}`
-    );
-
-    let data = await res.json();
-
-    if (data.length > 0) {
-      let coords = [
-        parseFloat(data[0].lat),
-        parseFloat(data[0].lon)
-      ];
-
-      geoCache[place] = coords;
-      return coords;
-    }
-  } catch (e) {
-    console.log("Geo error", e);
-  }
-
-  return null;
+    if (geoCache[place]) return geoCache[place];
+    try {
+        let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(place)}`);
+        let data = await res.json();
+        if (data.length > 0) {
+            let coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+            geoCache[place] = coords;
+            return coords;
+        }
+    } catch (e) { console.log("Geo error", e); }
+    return null;
 }
 
 //////////////////////////////////////////////////////////
-// 🌍 THREE.JS GLOBE
+// 🌍 THREE.JS GLOBE SETUP
 //////////////////////////////////////////////////////////
-
 let canvas = document.getElementById("globe");
-
 let scene = new THREE.Scene();
-
-let camera = new THREE.PerspectiveCamera(
-  75,
-  canvas.clientWidth / canvas.clientHeight,
-  0.1,
-  1000
-);
-
-let renderer = new THREE.WebGLRenderer({
-  canvas: canvas,
-  alpha: true,
-  antialias: true
-});
+let camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+let renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
 
 function resize() {
-  let w = canvas.clientWidth || 300;
-  let h = canvas.clientHeight || 300;
-
-  renderer.setSize(w, h);
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
+    let w = canvas.clientWidth || 300;
+    let h = canvas.clientHeight || 300;
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
 }
-
 resize();
 window.addEventListener("resize", resize);
 
-let globe = new THREE.Mesh(
-  new THREE.SphereGeometry(5, 32, 32),
-  new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load(
-      "https://threejs.org/examples/textures/earth_atmos_2048.jpg"
-    )
-  })
-);
+scene.add(new THREE.AmbientLight(0xffffff, 1.2));
 
+let globe = new THREE.Mesh(
+    new THREE.SphereGeometry(5, 64, 64),
+    new THREE.MeshStandardMaterial({
+        map: new THREE.TextureLoader().load("https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg")
+    })
+);
 scene.add(globe);
-camera.position.z = 10;
+camera.position.z = 11;
 
 let rotating = true;
 
 function animate() {
-  requestAnimationFrame(animate);
-
-  if (rotating) globe.rotation.y += 0.003;
-
-  renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+    if (rotating) {
+        globe.rotation.y += 0.003; 
+    }
+    renderer.render(scene, camera);
 }
 animate();
 
 //////////////////////////////////////////////////////////
-// 🌍 GLOBE ANIMATION
+// 🌍 GLOBE ANIMATION (SMOOTH FOCUS)
 //////////////////////////////////////////////////////////
-
-async function stopRotation() {
-  for (let i = 0; i < 20; i++) {
-    globe.rotation.y += 0.003 * (1 - i / 20);
-    await delay(20);
-  }
-  rotating = false;
-}
-
 async function focusGlobe(lat, lon) {
-  await stopRotation();
+    rotating = false;
+    let targetY = (lon + 180) * (Math.PI / 180);
+    let targetX = (lat) * (Math.PI / 180);
 
-  let targetY = THREE.MathUtils.degToRad(lon);
-  let targetX = THREE.MathUtils.degToRad(-lat);
-
-  for (let i = 0; i < 25; i++) {
-    globe.rotation.y += (targetY - globe.rotation.y) * 0.1;
-    globe.rotation.x += (targetX - globe.rotation.x) * 0.1;
-    await delay(20);
-  }
-
-  for (let i = 0; i < 15; i++) {
-    camera.position.z -= 0.2;
-    await delay(20);
-  }
+    for (let i = 0; i < 25; i++) {
+        globe.rotation.y += (targetY - globe.rotation.y) * 0.15;
+        globe.rotation.x += (targetX - globe.rotation.x) * 0.15;
+        if(camera.position.z > 7.5) camera.position.z -= 0.15;
+        await delay(30);
+    }
 }
 
 async function resetGlobe() {
-  for (let i = 0; i < 15; i++) {
-    camera.position.z += 0.2;
-    await delay(20);
-  }
-
-  rotating = true;
+    for (let i = 0; i < 15; i++) {
+        camera.position.z += 0.25;
+        globe.rotation.x *= 0.8; 
+        await delay(20);
+    }
+    camera.position.z = 11;
+    rotating = true;
 }
 
 //////////////////////////////////////////////////////////
-// 🗺️ MAP
+// 🗺️ TRAFFIC & HYBRID MAP (GOOGLE STYLE)
 //////////////////////////////////////////////////////////
-
 var map = L.map('map').setView([20, 0], 2);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+// Hybrid Satellite & Traffic Layer
+L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3']
+}).addTo(map);
+
+// Traffic Overlay
+L.tileLayer('https://{s}.google.com/vt/lyrs=m,traffic&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3']
+}).addTo(map);
 
 let marker;
 
 function showLocation(lat, lon) {
-  if (marker) map.removeLayer(marker);
+    if (marker) map.removeLayer(marker);
+    
+    marker = L.circleMarker([lat, lon], {
+        color: '#00ccff',
+        fillColor: '#00ccff',
+        fillOpacity: 0.6,
+        radius: 12
+    }).addTo(map);
 
-  marker = L.marker([lat, lon]).addTo(map);
-  map.setView([lat, lon], 4);
-
-  document.getElementById("map").style.opacity = 1;
+    map.flyTo([lat, lon], 12, { animate: true, duration: 1.5 });
+    document.getElementById("map").style.opacity = 1;
 }
 
 //////////////////////////////////////////////////////////
-// 🎥 VIDEO (FIXED NO REDIRECT)
+// 🎥 VIDEO & NEWS
 //////////////////////////////////////////////////////////
-
 async function playVideo(query) {
-  let iframe = document.getElementById("video");
-
-  try {
-    let res = await fetch(`/youtube?q=${encodeURIComponent(query)}`);
-    let data = await res.json();
-
-    if (data.videoId) {
-      iframe.src = `https://www.youtube.com/embed/${data.videoId}?autoplay=1&mute=1&controls=1`;
-    } else {
-      iframe.src = ""; // no redirect
-    }
-
-  } catch (e) {
-    iframe.src = "";
-  }
+    let iframe = document.getElementById("video");
+    try {
+        let res = await fetch(`/youtube?q=${encodeURIComponent(query)}`);
+        let data = await res.json();
+        if (data.videoId) {
+            iframe.src = `https://www.youtube.com/embed/${data.videoId}?autoplay=1&mute=1`;
+        }
+    } catch (e) { console.log("Video error", e); }
 }
-
-//////////////////////////////////////////////////////////
-// 📰 NEWS SYSTEM
-//////////////////////////////////////////////////////////
 
 async function loadNews() {
-  let res = await fetch("/news");
-  let data = await res.json();
+    try {
+        let res = await fetch("/news");
+        let data = await res.json();
+        let newsDiv = document.getElementById("news");
+        newsDiv.innerHTML = ""; 
 
-  data = data.slice(0, 50);
+        for (let n of data.slice(0, 5)) {
+            newsDiv.innerHTML += `
+              <div class="news-card" style="border-left: 4px solid #00ccff; background: rgba(0,0,0,0.5); margin-bottom: 10px; padding: 10px; color: white;">
+                <p><strong>${n.title}</strong></p>
+              </div>`;
 
-  let newsDiv = document.getElementById("news");
-  let seen = new Set();
+            let coords = await getCoords(n.country || "India");
+            if (coords) {
+                await focusGlobe(coords[0], coords[1]);
+                showLocation(coords[0], coords[1]);
+            }
 
-  for (let n of data) {
-
-    if (!n.title || seen.has(n.title)) continue;
-    seen.add(n.title);
-
-    newsDiv.innerHTML += `
-      <div class="news-card">
-        <img src="${n.image}">
-        <p>${n.title}</p>
-      </div>
-    `;
-
-    let coords = await getCoords(n.country);
-
-    if (coords) {
-      let [lat, lon] = coords;
-
-      await focusGlobe(lat, lon);
-      showLocation(lat, lon);
-    }
-
-    await playVideo(n.title);
-
-    await speak("Latest update. " + n.title);
-
-    await delay(1000);
-
-    await resetGlobe();
-  }
-
-  speak("All updates are completed, sir.");
+            await playVideo(n.title);
+            await speak(n.title);
+            await delay(5000); 
+            await resetGlobe();
+        }
+        speak("All system updates are completed, sir.");
+    } catch (e) { console.log("News error", e); }
 }
