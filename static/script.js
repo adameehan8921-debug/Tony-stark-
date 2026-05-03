@@ -65,8 +65,7 @@ async function getCoords(place) {
 
   try {
     let res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(place)}`,
-      { headers: { "User-Agent": "Aira-AI" } }
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(place)}`
     );
 
     let data = await res.json();
@@ -91,43 +90,42 @@ async function getCoords(place) {
 // 🌍 THREE.JS GLOBE
 //////////////////////////////////////////////////////////
 
-let globeCanvas = document.getElementById("globe");
+let canvas = document.getElementById("globe");
 
 let scene = new THREE.Scene();
 
 let camera = new THREE.PerspectiveCamera(
   75,
-  globeCanvas.clientWidth / globeCanvas.clientHeight,
+  canvas.clientWidth / canvas.clientHeight,
   0.1,
   1000
 );
 
 let renderer = new THREE.WebGLRenderer({
-  canvas: globeCanvas,
+  canvas: canvas,
   alpha: true,
   antialias: true
 });
 
-function resizeGlobe() {
-  let w = globeCanvas.offsetWidth || 300;
-  let h = globeCanvas.offsetHeight || 300;
+function resize() {
+  let w = canvas.clientWidth || 300;
+  let h = canvas.clientHeight || 300;
 
   renderer.setSize(w, h);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
 
-resizeGlobe();
-window.addEventListener("resize", resizeGlobe);
-
-let geometry = new THREE.SphereGeometry(5, 32, 32);
-let texture = new THREE.TextureLoader().load(
-  "https://threejs.org/examples/textures/earth_atmos_2048.jpg"
-);
+resize();
+window.addEventListener("resize", resize);
 
 let globe = new THREE.Mesh(
-  geometry,
-  new THREE.MeshBasicMaterial({ map: texture })
+  new THREE.SphereGeometry(5, 32, 32),
+  new THREE.MeshBasicMaterial({
+    map: new THREE.TextureLoader().load(
+      "https://threejs.org/examples/textures/earth_atmos_2048.jpg"
+    )
+  })
 );
 
 scene.add(globe);
@@ -148,7 +146,7 @@ animate();
 // 🌍 GLOBE ANIMATION
 //////////////////////////////////////////////////////////
 
-async function stopRotationSmooth() {
+async function stopRotation() {
   for (let i = 0; i < 20; i++) {
     globe.rotation.y += 0.003 * (1 - i / 20);
     await delay(20);
@@ -157,7 +155,7 @@ async function stopRotationSmooth() {
 }
 
 async function focusGlobe(lat, lon) {
-  await stopRotationSmooth();
+  await stopRotation();
 
   let targetY = THREE.MathUtils.degToRad(lon);
   let targetX = THREE.MathUtils.degToRad(-lat);
@@ -165,7 +163,7 @@ async function focusGlobe(lat, lon) {
   for (let i = 0; i < 25; i++) {
     globe.rotation.y += (targetY - globe.rotation.y) * 0.1;
     globe.rotation.x += (targetX - globe.rotation.x) * 0.1;
-    await delay(25);
+    await delay(20);
   }
 
   for (let i = 0; i < 15; i++) {
@@ -203,7 +201,7 @@ function showLocation(lat, lon) {
 }
 
 //////////////////////////////////////////////////////////
-// 🎥 VIDEO (YouTube API)
+// 🎥 VIDEO (FIXED NO REDIRECT)
 //////////////////////////////////////////////////////////
 
 async function playVideo(query) {
@@ -214,22 +212,14 @@ async function playVideo(query) {
     let data = await res.json();
 
     if (data.videoId) {
-      iframe.src = `https://www.youtube.com/embed/${data.videoId}?autoplay=1&mute=1`;
+      iframe.src = `https://www.youtube.com/embed/${data.videoId}?autoplay=1&mute=1&controls=1`;
     } else {
-      fallbackVideo(query);
+      iframe.src = ""; // no redirect
     }
 
   } catch (e) {
-    fallbackVideo(query);
+    iframe.src = "";
   }
-}
-
-function fallbackVideo(query) {
-  window.open(
-    "https://www.youtube.com/results?search_query=" +
-    encodeURIComponent(query + " news"),
-    "_blank"
-  );
 }
 
 //////////////////////////////////////////////////////////
@@ -250,7 +240,6 @@ async function loadNews() {
     if (!n.title || seen.has(n.title)) continue;
     seen.add(n.title);
 
-    // 📰 STACK UI
     newsDiv.innerHTML += `
       <div class="news-card">
         <img src="${n.image}">
@@ -258,7 +247,6 @@ async function loadNews() {
       </div>
     `;
 
-    // 🌍 GEO
     let coords = await getCoords(n.country);
 
     if (coords) {
@@ -266,17 +254,13 @@ async function loadNews() {
 
       await focusGlobe(lat, lon);
       showLocation(lat, lon);
-
-      await delay(800);
     }
 
-    // 🎥 VIDEO
     await playVideo(n.title);
 
-    // 🔊 VOICE
     await speak("Latest update. " + n.title);
 
-    await delay(1200);
+    await delay(1000);
 
     await resetGlobe();
   }
