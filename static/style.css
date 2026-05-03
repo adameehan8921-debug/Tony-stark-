@@ -13,11 +13,11 @@ body {
     radial-gradient(circle at 50% 50%, #001a22 0%, #000 100%),
     linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
-  background-size: 100% 100%, 20px 20px, 20px 20px; /* Grid background */
+  background-size: 100% 100%, 20px 20px, 20px 20px;
   color: var(--jarvis-blue);
   font-family: "Orbitron", sans-serif;
   height: 100vh;
-  overflow: hidden; /* No scroll, everything fits in view */
+  overflow: hidden;
 }
 
 /* 📺 SCANLINE EFFECT */
@@ -39,92 +39,92 @@ body::after {
   border-bottom: 1px solid var(--jarvis-blue);
   background: rgba(0,0,0,0.8);
   box-shadow: var(--glow);
+  z-index: 1001;
 }
 
-.top-bar h1 { font-size: 1.2rem; letter-spacing: 3px; margin: 0; }
-
-/* 🧠 HUD CONTAINER (Mobile Optimized) */
+/* 🧠 HUD CONTAINER (Mobile Optimized Layout) */
 .container {
-  display: grid;
-  grid-template-areas: 
-    "left right"
-    "center center"
-    "bottom bottom";
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 150px 1fr 180px;
-  height: calc(100vh - 50px);
+  display: flex;
+  flex-direction: column; /* Vertical stack for better fit */
+  height: calc(100vh - 60px);
   padding: 10px;
-  gap: 8px;
+  gap: 10px;
+  overflow-y: auto; /* പാനലുകൾ കൂടുകയാണെങ്കിൽ സ്ക്രോൾ ചെയ്യാൻ */
 }
 
-/* 💬 FLOATING CHAT PANEL (Top Left) */
-.left-panel { grid-area: left; overflow: hidden; }
+/* 💬 TOP SECTION: Chat & Video */
+.top-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 120px;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
 .chat-box {
-  height: 100%;
-  font-size: 10px;
   border-left: 3px solid var(--jarvis-blue);
   background: var(--panel-bg);
   padding: 8px;
-  clip-path: polygon(0 0, 90% 0, 100% 10%, 100% 100%, 0 100%); /* Jarvis cut corner */
+  font-size: 10px;
+  clip-path: polygon(0 0, 90% 0, 100% 10%, 100% 100%, 0 100%);
+  overflow-y: auto;
 }
 
-/* 🎥 VIDEO MINI-FEED (Top Right) */
-.right-panel { grid-area: right; }
 .video-box {
-  width: 100%; height: 100%;
   border: 1px solid rgba(0, 240, 255, 0.3);
-  background: black;
+  background: #000;
+  height: 100%;
 }
 
-/* 🌍 MAIN GLOBE (The Centerpiece) */
+/* 🌍 CENTER SECTION: Globe */
 .globe-wrapper {
-  grid-area: center;
+  height: 300px; /* Fixed height for globe area */
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  position: relative;
+  background: radial-gradient(circle, rgba(0,240,255,0.05) 0%, transparent 70%);
 }
-#globe { width: 100%; height: 100%; max-height: 350px; }
 
-/* 🗺️ TACTICAL MAP & NEWS (Bottom Area) */
+#globe {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* 🗺️ BOTTOM SECTION: Tactical Map */
+#map {
+  width: 100%;
+  height: 200px; /* താഴെ വശത്തായി മാപ്പിന് ഫുൾ വീതി */
+  border: 1px solid var(--jarvis-blue);
+  box-shadow: var(--glow);
+  border-radius: 5px;
+  filter: hue-rotate(160deg) brightness(1.1);
+  flex-shrink: 0;
+}
+
+/* 📰 NEWS SECTION: Horizontal Stream */
 .news-box {
-  grid-area: bottom;
   display: flex;
   gap: 10px;
-  overflow-x: auto; /* Side scroll for news cards */
-  padding-bottom: 5px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  flex-shrink: 0;
 }
 
 .news-card {
-  min-width: 140px;
-  height: 150px;
+  min-width: 160px;
   background: var(--panel-bg);
   border: 1px solid var(--jarvis-blue);
   font-size: 9px;
-  position: relative;
+  padding: 5px;
 }
 
-/* 🛰️ MAP OVERLAY (Mini Map) */
-#map {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%; /* Circular Radar style */
-  border: 2px solid var(--jarvis-blue);
-  box-shadow: var(--glow);
-  z-index: 500;
-  opacity: 0.8;
-  filter: hue-rotate(160deg) brightness(1.2);
-}
-
-/* 📸 NEWS IMAGE SCANNING EFFECT */
+/* 📸 SCANNING EFFECT */
 .scan-container {
-  width: 100%; height: 60px;
+  width: 100%; height: 70px;
   position: relative; overflow: hidden;
 }
-.news-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; }
+.news-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
 .scan-bar {
   position: absolute; width: 100%; height: 2px;
   background: var(--jarvis-blue);
@@ -134,9 +134,6 @@ body::after {
 
 @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
 
-/* 📱 MOBILE SPECIFIC TWEAKS */
-@media (max-width: 480px) {
-  .top-bar h1 { font-size: 0.9rem; }
-  .chat-box { font-size: 9px; }
-  #map { width: 100px; height: 100px; bottom: 10px; right: 10px; }
-}
+/* 🔄 SCROLLBAR */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-thumb { background: var(--jarvis-blue); }
