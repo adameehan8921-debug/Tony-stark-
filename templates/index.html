@@ -2,76 +2,79 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-
-  <!-- 📱 MOBILE FIX -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIRA 20B | JARVIS OS</title>
 
-  <title>Aira AI</title>
-
-  <!-- 🎨 CSS -->
   <link rel="stylesheet" href="/static/style.css">
 
-  <!-- 🌍 Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
-  <!-- 🌍 Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-  <!-- 🔥 FONT (Jarvis feel) -->
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
 
-<!-- 🔷 TOP BAR -->
-<div class="top-bar">
-  <h1>🧠 AIRA</h1>
-  <button class="mic-btn" onclick="startListening()">🎤</button>
-</div>
+  <div class="scanline"></div>
 
-<!-- 🧠 MAIN -->
-<div class="container">
-
-  <!-- LEFT PANEL -->
-  <div class="left-panel">
-
-    <!-- 💬 CHAT -->
-    <div class="chat-box">
-      <p><b>You:</b> <span id="user"></span></p>
-      <p><b>Aira:</b> <span id="bot"></span></p>
+  <header class="top-bar">
+    <div class="system-status">
+      <span class="pulse"></span> SYSTEM: ONLINE
     </div>
-
-    <!-- 📰 NEWS -->
-    <div id="news" class="news-box"></div>
-
-    <!-- 🎥 VIDEO -->
-    <iframe 
-      id="video" 
-      class="video-box"
-      allow="autoplay; encrypted-media"
-      allowfullscreen>
-    </iframe>
-
-  </div>
-
-  <!-- RIGHT PANEL -->
-  <div class="right-panel">
-
-    <!-- 🌍 GLOBE -->
-    <div class="globe-wrapper">
-      <canvas id="globe"></canvas>
+    <div class="title-logo">
+      <h1>AIRA <span class="version">20B</span></h1>
     </div>
+    <div class="controls">
+      <button class="mic-btn" onclick="startListening()">
+        <span class="mic-icon">🎤</span>
+      </button>
+    </div>
+  </header>
 
-    <!-- 🗺️ MAP -->
-    <div id="map"></div>
+  <main class="container">
 
-  </div>
+    <section class="left-panel">
+      
+      <div class="hud-box chat-box">
+        <h3 class="box-label">COMMUNICATION LOG</h3>
+        <div class="scroll-area">
+          <p class="user-text"><b>USER ></b> <span id="user">Waiting for input...</span></p>
+          <p class="bot-text"><b>AIRA ></b> <span id="bot">Systems ready, Sir.</span></p>
+        </div>
+      </div>
 
-</div>
+      <div class="hud-box news-box">
+        <h3 class="box-label">GLOBAL INTELLIGENCE</h3>
+        <div id="news" class="scroll-area">
+          </div>
+      </div>
 
-<!-- 🔻 SCRIPTS -->
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="/static/script.js"></script>
+      <div class="hud-box video-wrapper">
+        <h3 class="box-label">VISUAL FEED</h3>
+        <iframe id="video" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      </div>
+
+    </section>
+
+    <section class="right-panel">
+
+      <div class="hud-box globe-wrapper">
+        <h3 class="box-label">WORLD VIEW</h3>
+        <canvas id="globe"></canvas>
+      </div>
+
+      <div class="hud-box map-wrapper">
+        <h3 class="box-label">TACTICAL TRACKER</h3>
+        <div id="map"></div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="/static/script.js"></script>
 
 </body>
 </html>
