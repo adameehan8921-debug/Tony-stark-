@@ -37,9 +37,9 @@ recognition.onresult = async function(event) {
 function speak(text) {
     return new Promise(resolve => {
         speechSynthesis.cancel();
-        let s = new SpeechSynthesisUtterance(text); // "Yes sir" removal for cleaner flow
+        let s = new SpeechSynthesisUtterance(text);
         s.rate = 1.1; 
-        s.pitch = 0.9; // Slightly deeper Jarvis voice
+        s.pitch = 0.9;
         s.onend = resolve;
         speechSynthesis.speak(s);
     });
@@ -48,7 +48,19 @@ function speak(text) {
 function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
 //////////////////////////////////////////////////////////
-// 🌍 THREE.JS GLOBE (STABLE ROTATION)
+// 🌍 GEO (OpenStreetMap)
+//////////////////////////////////////////////////////////
+async function getCoords(place) {
+    try {
+        let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(place)}`);
+        let data = await res.json();
+        if (data.length > 0) return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+    } catch (e) { console.log("Geo error", e); }
+    return [20, 77]; // Default to India if not found
+}
+
+//////////////////////////////////////////////////////////
+// 🌍 THREE.JS GLOBE (FIXED ROTATION)
 //////////////////////////////////////////////////////////
 let canvas = document.getElementById("globe");
 let scene = new THREE.Scene();
@@ -60,8 +72,7 @@ scene.add(new THREE.AmbientLight(0xffffff, 1.5));
 let globe = new THREE.Mesh(
     new THREE.SphereGeometry(5, 64, 64),
     new THREE.MeshStandardMaterial({
-        map: new THREE.TextureLoader().load("https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg"),
-        bumpScale: 0.05,
+        map: new THREE.TextureLoader().load("https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg")
     })
 );
 scene.add(globe);
@@ -75,7 +86,6 @@ function animate() {
     if (rotating) {
         globe.rotation.y += 0.003; 
     } else {
-        // Smooth transition to location
         globe.rotation.y += (targetY - globe.rotation.y) * 0.1;
         globe.rotation.x += (targetX - globe.rotation.x) * 0.1;
     }
@@ -87,58 +97,64 @@ async function focusGlobe(lat, lon) {
     rotating = false;
     targetY = (lon + 180) * (Math.PI / 180);
     targetX = (lat) * (Math.PI / 180);
-    
-    for (let i = 0; i < 15; i++) {
-        if(camera.position.z > 8) camera.position.z -= 0.2;
-        await delay(30);
-    }
+    while(camera.position.z > 8) { camera.position.z -= 0.1; await delay(20); }
 }
 
 async function resetGlobe() {
     rotating = true;
-    while(camera.position.z < 12) {
-        camera.position.z += 0.2;
-        await delay(20);
-    }
+    while(camera.position.z < 12) { camera.position.z += 0.1; await delay(20); }
 }
 
 //////////////////////////////////////////////////////////
-// 📰 NEWS SYSTEM (WITH SCANNING EFFECT & IMAGES)
+// 🗺️ RADAR MAP SETUP
+//////////////////////////////////////////////////////////
+var map = L.map('map', {zoomControl: false}).setView([20, 0], 2);
+L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+    subdomains:['mt0','mt1','mt2','mt3']
+}).addTo(map);
+
+function showLocation(lat, lon) {
+    map.flyTo([lat, lon], 10, { animate: true, duration: 1.5 });
+}
+
+//////////////////////////////////////////////////////////
+// 📰 NEWS SYSTEM (THE REAL JARVIS FEEL)
 //////////////////////////////////////////////////////////
 async function loadNews() {
     try {
         let res = await fetch("/news");
         let data = await res.json();
         let newsDiv = document.getElementById("news");
-        newsDiv.innerHTML = ""; 
+        
+        newsDiv.innerHTML = ""; // Clear old
 
-        for (let n of data.slice(0, 5)) {
-            // Jarvis Style News Card with Image & Scanning Overlay
-            newsDiv.innerHTML = `
-              <div class="news-card jarvis-ui">
+        // 1. Inject cards for scrolling
+        data.forEach(n => {
+            newsDiv.innerHTML += `
+              <div class="news-card">
                 <div class="scan-container">
                     <img src="${n.image}" class="news-img">
                     <div class="scan-bar"></div>
                 </div>
-                <div class="news-info">
-                    <p class="intel-label">INTEL CORRELATION: ${n.country.toUpperCase()}</p>
-                    <p class="news-title">${n.title}</p>
-                </div>
+                <p class="news-title">${n.title.substring(0, 50)}...</p>
               </div>`;
+        });
 
+        // 2. Sequential Analysis
+        for (let n of data.slice(0, 5)) {
             let coords = await getCoords(n.country);
-            if (coords) {
-                await focusGlobe(coords[0], coords[1]);
-                showLocation(coords[0], coords[1]);
-            }
+            await focusGlobe(coords[0], coords[1]);
+            showLocation(coords[0], coords[1]);
 
-            await playVideo(n.title);
-            await speak("Update from sector " + n.country + ". " + n.title);
-            await delay(4000); 
+            // Play video if available
+            let vRes = await fetch(`/youtube?q=${encodeURIComponent(n.title)}`);
+            let vData = await vRes.json();
+            if(vData.videoId) document.getElementById("video").src = `https://www.youtube.com/embed/${vData.videoId}?autoplay=1&mute=1`;
+
+            await speak(n.title);
+            await delay(5000);
             await resetGlobe();
         }
-        speak("Global intel synchronization complete, Sir.");
-    } catch (e) { console.log("News relay failed", e); }
+        speak("All systems updated, Sir.");
+    } catch (e) { console.log("News Error", e); }
 }
-
-// ... (playVideo & showLocation remain same)
