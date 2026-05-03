@@ -9,6 +9,7 @@ app = Flask(__name__)
 # 🔑 API KEYS
 groq = Groq(api_key=os.getenv("GROQ_API_KEY"))
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")  # 🔥 ADD THIS
 
 # 🧠 CACHE (avoid API overuse)
 news_cache = {
@@ -42,12 +43,12 @@ def chat():
     reply = response.choices[0].message.content
     return jsonify({"reply": reply})
 
-# 📰 NEWS (SMART + LIMITED + NO DUPLICATE)
+# 📰 NEWS (SMART + CACHE + NO DUPLICATE)
 @app.route("/news")
 def news():
     global news_cache
 
-    # 🧠 Use cache if not expired
+    # 🧠 CACHE CHECK
     if time.time() - news_cache["time"] < CACHE_DURATION:
         return jsonify(news_cache["data"])
 
@@ -65,7 +66,6 @@ def news():
         for a in res.get("articles", []):
             title = a.get("title")
 
-            # ❌ Skip invalid / duplicate
             if not title or title in seen_titles:
                 continue
 
@@ -78,18 +78,44 @@ def news():
                 "country": c
             })
 
-            # 🔥 LIMIT TOTAL NEWS = 10
             if len(articles) >= 10:
                 break
 
         if len(articles) >= 10:
             break
 
-    # 🧠 Save cache
+    # 🧠 SAVE CACHE
     news_cache["data"] = articles
     news_cache["time"] = time.time()
 
     return jsonify(articles)
+
+# 🎥 YOUTUBE API ROUTE (🔥 IMPORTANT)
+@app.route("/youtube")
+def youtube():
+    query = request.args.get("q")
+
+    if not query:
+        return jsonify({"videoId": None})
+
+    try:
+        url = (
+            "https://www.googleapis.com/youtube/v3/search"
+            f"?part=snippet&q={query}&key={YOUTUBE_API_KEY}&maxResults=1&type=video"
+        )
+
+        res = requests.get(url).json()
+
+        items = res.get("items")
+
+        if items:
+            video_id = items[0]["id"]["videoId"]
+            return jsonify({"videoId": video_id})
+
+    except Exception as e:
+        print("YouTube API Error:", e)
+
+    return jsonify({"videoId": None})
 
 # 🚀 RUN
 if __name__ == "__main__":
