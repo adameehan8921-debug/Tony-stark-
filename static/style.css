@@ -1,182 +1,177 @@
-/* 🌌 BODY */
-body {
-  margin: 0;
-  background: radial-gradient(circle, #000000, #020d12);
-  color: #00f0ff;
-  font-family: "Orbitron", monospace;
+/* 🌌 BODY & GLOBAL SETTINGS */
+:root {
+  --jarvis-blue: #00f0ff;
+  --dark-bg: #050505;
+  --panel-bg: rgba(0, 30, 45, 0.4);
+  --border-glow: 0 0 15px rgba(0, 240, 255, 0.4);
 }
 
-/* 🔷 TOP BAR */
+body {
+  margin: 0;
+  background-color: var(--dark-bg);
+  background-image: radial-gradient(circle at center, #001a22 0%, #000 100%);
+  color: var(--jarvis-blue);
+  font-family: "Orbitron", sans-serif;
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* 📺 SCANLINE EFFECT (Jarvis Monitor Feel) */
+body::before {
+  content: " ";
+  position: fixed;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+              linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+  background-size: 100% 4px, 3px 100%;
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* 🔷 TOP HUD BAR */
 .top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 20px;
-  border-bottom: 1px solid #00f0ff55;
-  box-shadow: 0 0 10px #00f0ff33;
+  padding: 10px 40px;
+  background: rgba(0, 0, 0, 0.8);
+  border-bottom: 2px solid var(--jarvis-blue);
+  box-shadow: var(--border-glow);
+  z-index: 101;
 }
 
 .top-bar h1 {
   margin: 0;
-  letter-spacing: 2px;
+  letter-spacing: 6px;
+  font-weight: 700;
+  text-shadow: 0 0 10px var(--jarvis-blue);
 }
 
-/* 🎤 MIC BUTTON */
+/* 🎤 MIC BUTTON (Holographic) */
 .mic-btn {
   background: transparent;
-  border: 1px solid #00f0ff;
-  color: #00f0ff;
-  padding: 8px 15px;
+  border: 2px solid var(--jarvis-blue);
+  color: var(--jarvis-blue);
+  padding: 10px 20px;
+  border-radius: 5px;
   cursor: pointer;
-  transition: 0.3s;
+  font-family: "Orbitron";
+  text-transform: uppercase;
+  transition: all 0.4s ease;
+  box-shadow: inset 0 0 10px var(--jarvis-blue);
 }
 
 .mic-btn:hover {
-  background: #00f0ff;
+  background: var(--jarvis-blue);
   color: black;
-  box-shadow: 0 0 15px #00f0ff;
+  box-shadow: 0 0 30px var(--jarvis-blue);
 }
 
-/* 🧠 MAIN */
+/* 🧠 MAIN CONTAINER */
 .container {
   display: flex;
   height: calc(100vh - 70px);
+  padding: 15px;
+  gap: 15px;
+  box-sizing: border-box;
 }
 
-/* 📦 LEFT PANEL */
-.left-panel {
-  width: 60%;
-  padding: 20px;
+/* 📦 PANELS (Glassmorphism) */
+.left-panel, .right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.left-panel { width: 55%; }
+.right-panel { width: 45%; }
+
+/* 💬 HUD BOXES (The Jarvis Style) */
+.chat-box, .news-box, .video-box, .globe-wrapper, #map {
+  background: var(--panel-bg);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: 4px;
+  backdrop-filter: blur(8px);
+  box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.1);
+  padding: 15px;
+  position: relative;
+}
+
+/* Corner Accents (Jarvis UI Detail) */
+.chat-box::after, .news-box::after {
+  content: "";
+  position: absolute;
+  top: 0; right: 0;
+  border-top: 10px solid var(--jarvis-blue);
+  border-left: 10px solid transparent;
+}
+
+/* 💬 CHAT BOX */
+.chat-box {
+  height: 120px;
+  border-left: 4px solid var(--jarvis-blue);
   overflow-y: auto;
 }
 
-/* 📦 RIGHT PANEL */
-.right-panel {
-  width: 40%;
+/* 📰 NEWS CARDS */
+.news-box {
+  flex-grow: 1;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid #00f0ff33;
-}
-
-/* 💬 CHAT */
-.chat-box {
-  padding: 10px;
-  border: 1px solid #00f0ff33;
-  margin-bottom: 15px;
-  box-shadow: 0 0 10px #00f0ff22;
-}
-
-/* 📰 NEWS */
-.news-box {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
 }
 
 .news-card {
-  border: 1px solid #00f0ff33;
-  padding: 5px;
-  width: 180px;
+  background: rgba(0, 240, 255, 0.05);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  padding: 10px;
+  border-radius: 4px;
   transition: 0.3s;
 }
 
 .news-card:hover {
-  box-shadow: 0 0 15px #00f0ff;
-  transform: scale(1.05);
+  background: rgba(0, 240, 255, 0.15);
+  border-color: var(--jarvis-blue);
+  transform: translateX(5px);
 }
 
-.news-card img {
-  width: 100%;
-  border-radius: 5px;
-}
-
-/* 🎥 VIDEO */
+/* 🎥 VIDEO FEED */
 .video-box {
+  height: 220px;
   width: 100%;
-  height: 250px;
-  margin-top: 15px;
-  border: 1px solid #00f0ff33;
 }
 
-/* 🌍 GLOBE WRAPPER (IMPORTANT FIX 🔥) */
+/* 🌍 GLOBE & MAP (Tactical Look) */
 .globe-wrapper {
   height: 50%;
-  width: 100%;
-  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* 🌍 GLOBE */
-#globe {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-/* 🗺️ MAP */
 #map {
   height: 50%;
-  opacity: 0;
-  transition: opacity 1s ease;
+  opacity: 0.8;
+  filter: hue-rotate(170deg) brightness(0.9) contrast(1.2);
 }
 
-/* ✨ TEXT GLOW */
-b {
-  color: #00ffff;
-  text-shadow: 0 0 5px #00ffff;
-}
-
-/* 🔄 SCROLLBAR */
+/* 🔄 SCROLLBAR (Minimalist) */
 ::-webkit-scrollbar {
-  width: 5px;
+  width: 4px;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #00f0ff;
+  background: var(--jarvis-blue);
+  box-shadow: 0 0 10px var(--jarvis-blue);
 }
 
-/* 🌐 HACKER GLOW EFFECT */
-body::after {
-  content: "";
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    rgba(0, 255, 255, 0.03) 50%,
-    transparent 50%
-  );
-  background-size: 100% 4px;
-  pointer-events: none;
-}
+/* ✨ TEXT GLOWS */
+#user { color: #fff; text-shadow: 0 0 5px var(--jarvis-blue); }
+#bot { color: var(--jarvis-blue); }
 
-/* 📱 MOBILE */
+/* 📱 MOBILE OPTIMIZATION */
 @media (max-width: 768px) {
-
-  .container {
-    flex-direction: column;
-    height: auto;
-  }
-
-  .left-panel, .right-panel {
-    width: 100%;
-  }
-
-  .globe-wrapper {
-    height: 200px;
-  }
-
-  #map {
-    height: 200px;
-  }
-
-  .video-box {
-    height: 200px;
-  }
-
-  .news-box {
-    justify-content: center;
-  }
-
-  .news-card {
-    width: 90%;
-  }
+  .container { flex-direction: column; overflow-y: auto; }
+  .left-panel, .right-panel { width: 100%; height: auto; }
+  .globe-wrapper, #map { height: 300px; }
 }
